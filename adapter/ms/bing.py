@@ -61,7 +61,7 @@ class BingAdapter(BotAdapter):
                             parsed_content = parsed_content.replace("你好", "Hi~")
                             #parsed_content = ContentDFA.filter_all(parsed_content)
                             if ContentDFA.exists(parsed_content):
-                                yield "此对话已终结了喵，继续回复将会开启新会话~"
+                                yield "此对话违反了凯琳酱的使用政策 继续回复将会开启新会话~"
                                 await self.on_reset()
                                 return
                             for suggestion in suggestions:
