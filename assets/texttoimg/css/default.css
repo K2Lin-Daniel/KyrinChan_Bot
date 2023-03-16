@@ -22,7 +22,7 @@ a {
 }
 
 a.absent {
-    color: #cc0000
+    color: #98e3ec
 }
 
 a.anchor {
@@ -360,13 +360,15 @@ code {
     --side-bar-bg-color: #fff;
     --control-text-color: #777;
     --active-file-border-color: var(--drake-accent);
-    --drake-accent: #e95f59;
-    --drake-highlight: #d63200;
+    --drake-accent: #f3cac8;
+    --drake-highlight: #74e2dd;
     --drake-text-color: #000000
 }
 
 body {
-    color: var(--drake-text-color);
+    background: rgb(255,242,242);
+    background: -moz-linear-gradient(132deg, rgba(255,242,242,1) 31%, rgba(208,219,244,1) 64%, rgba(238,253,255,1) 100%);
+    background: -webkit-linear-gradient(132deg, rgba(255,242,242,1) 31%, rgba(208,219,244,1) 64%, rgba(238,253,255,1) 100%);
     -webkit-font-feature-settings: "liga"on,"calt"on;
     -webkit-font-smoothing: subpixel-antialiased;
     text-rendering: optimizeLegibility;
@@ -978,7 +980,7 @@ div.code-tooltip-content {
 }
 
 .cm-s-inner span.cm-error {
-    color: red
+    color: rgb(0, 247, 255)
 }
 
 .cm-s-inner span.cm-attribute {
@@ -1047,7 +1049,7 @@ html, body {
     box-sizing: border-box;
 }
 #header>div {
-    border-bottom: 1px solid #b82857;
+    border-bottom: 1px solid #f59bb9;
     display: inline-block;
     padding: 10px;
     padding-right: 100px;
@@ -1069,7 +1071,7 @@ html, body {
 }
 
 #footer > .qrc {
-    border-top: 1px solid #b82857;
+    border-top: 1px solid #87dcf1;
     margin-top: 20px;
     padding-top: 10px;
     width: 300px;
