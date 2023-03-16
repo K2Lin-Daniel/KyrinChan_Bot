@@ -5,7 +5,7 @@
 # @Github    ：spirit-yzk
 import base64
 import re
-import pycorrector
+
 
 
 def strToBase64(s):
@@ -43,7 +43,7 @@ class DFA:
                 if str(s) and s not in self.ban_words_set:
                     self.ban_words_set.add(s)
                     self.ban_words_list.append(str(s))
-                    sentence = pycorrector.simplified2traditional(s)
+                    sentence = s
                     if sentence != s:
                         self.ban_words_set.add(sentence)
                         self.ban_words_list.append(str(sentence))
