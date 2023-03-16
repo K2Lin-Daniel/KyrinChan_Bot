@@ -39,14 +39,15 @@ class DFA:
                 s = s.replace('\n', '')
                 s = s.strip()
                 if len(s) == 0:
+                    print("No Censor word provided")
                     continue
                 if str(s) and s not in self.ban_words_set:
                     self.ban_words_set.add(s)
                     self.ban_words_list.append(str(s))
-                    sentence = s
-                    if sentence != s:
-                        self.ban_words_set.add(sentence)
-                        self.ban_words_list.append(str(sentence))
+                    #sentence = s
+                    #if sentence != s:
+                    #    self.ban_words_set.add(sentence)
+                    #    self.ban_words_list.append(str(sentence))
         self.add_hash_dict(self.ban_words_list)
 
     def change_words(self, path):
@@ -148,3 +149,13 @@ class DFA:
                 s = s[:start] + '喵' * num + s[end + 1:]
             i += 1
         return s
+    
+    @staticmethod
+    def draw_words(_str, pos_list):
+        ss = str()
+        for i in range(len(_str)):
+            if '\u4e00' <= _str[i] <= '\u9fa5' or '\u3400' <= _str[i] <= '\u4db5' or '\u0030' <= _str[i] <= '\u0039' \
+                    or '\u0061' <= _str[i] <= '\u007a' or '\u0041' <= _str[i] <= '\u005a':
+                ss += _str[i]
+                pos_list.append(i)
+        return 

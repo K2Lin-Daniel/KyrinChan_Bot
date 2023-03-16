@@ -9,7 +9,9 @@ from exceptions import BotOperationNotSupportedException
 from loguru import logger
 import re
 
-from utils.detect import DFA, Censor, Detect
+from utils.detect import DFA
+
+ContentDFA = DFA(path="./utils/Danger.form")
 
 class BingAdapter(BotAdapter):
     cookieData = None
@@ -54,10 +56,14 @@ class BingAdapter(BotAdapter):
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
                             parsed_content = parsed_content + '\n猜你想问：\n 喵~?'
-                            parsed_content = parsed_content.replace("Bing", "凯琳酱喵喵~")
+                            parsed_content = parsed_content.replace("Bing", "Kyrin Chan~")
                             parsed_content = parsed_content.replace("必应", "凯琳酱喵喵~")
                             parsed_content = parsed_content.replace("你好", "Hi~")
-                            parsed_content = ContentDfa.filter_all(parsed_content)
+                            #parsed_content = ContentDFA.filter_all(parsed_content)
+                            if ContentDFA.exists(parsed_content):
+                                yield "此对话已终结了喵，继续回复将会开启新会话~"
+                                await self.on_reset()
+                                return
                             for suggestion in suggestions:
                                 parsed_content = parsed_content + f"- {suggestion.get('text')}\n"
                     if parsed_content == '':
