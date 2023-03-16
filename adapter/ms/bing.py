@@ -9,6 +9,7 @@ from exceptions import BotOperationNotSupportedException
 from loguru import logger
 import re
 
+from utils.detect import DFA, Censor, Detect
 
 class BingAdapter(BotAdapter):
     cookieData = None
@@ -39,7 +40,7 @@ class BingAdapter(BotAdapter):
 
     async def ask(self, prompt: str) -> Generator[str, None, None]:
         self.count = self.count + 1
-        remaining_conversations = f'剩余回复数：{self.count} / 15:\n'
+        remaining_conversations = f'Memory Limit：{self.count} / 15:\n'
         parsed_content = ''
         try:
             async for final, response in self.bot.ask_stream(prompt=prompt,
@@ -52,17 +53,21 @@ class BingAdapter(BotAdapter):
                     if len(response["item"].get('messages', [])) > 1:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
-                            parsed_content = parsed_content + '\n猜你想问：\n'
+                            parsed_content = parsed_content + '\n猜你想问：\n 喵~?'
+                            parsed_content = parsed_content.replace("Bing", "凯琳酱喵喵~")
+                            parsed_content = parsed_content.replace("必应", "凯琳酱喵喵~")
+                            parsed_content = parsed_content.replace("你好", "Hi~")
+                            parsed_content = ContentDfa.filter_all(parsed_content)
                             for suggestion in suggestions:
-                                parsed_content = parsed_content + f"* {suggestion.get('text')}\n"
+                                parsed_content = parsed_content + f"- {suggestion.get('text')}\n"
                     if parsed_content == '':
-                        yield "Bing 已结束本次会话。继续发送消息将重新开启一个新会话。"
+                        yield "此对话已终结了喵，继续回复将会开启新会话~"
                         await self.on_reset()
                         return
                     yield remaining_conversations + parsed_content
         except Exception as e:
             logger.exception(e)
-            yield "Bing 已结束本次会话。继续发送消息将重新开启一个新会话。"
+            yield "此对话已终结了喵，继续回复将会开启新会话~"
             await self.on_reset()
             return
 
