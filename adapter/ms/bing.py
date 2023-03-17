@@ -66,19 +66,19 @@ class BingAdapter(BotAdapter):
                             #parsed_content = ContentDFA.filter_all(parsed_content)
                             if ContentDFA.exists(parsed_content):
                                 logger.debug("Dangerous ASK:" + prompt + " Dangerous Content:" + parsed_content)
-                                yield "🚫此对话违反了凯琳酱的政策，请珍惜凯琳酱，不要询问敏感的问题喵~ 继续回复将会开启新会话~♻️"
+                                yield "🚫此对话违反了凯琳酱的政策 请珍惜凯琳酱，不要询问敏感的问题喵~ 继续回复将会开启新会话~♻️"
                                 await self.on_reset()
                                 return
                             for suggestion in suggestions:
                                 parsed_content = parsed_content + f"- {suggestion.get('text')}\n"
                     if parsed_content == '':
-                        yield "⌛此对话已终结了喵，继续回复将会开启新会话~♻️"
+                        yield "⌛此对话已终结了喵 继续回复将开启新会话~♻️"
                         await self.on_reset()
                         return
                     yield remaining_conversations + parsed_content
         except Exception as e:
             logger.exception(e)
-            yield "⌛此对话已终结了喵，继续回复将会开启新会话~🔁"
+            yield "⌛此对话已终结了喵 继续回复将开启新会话~🔁"
             await self.on_reset()
             return
 
