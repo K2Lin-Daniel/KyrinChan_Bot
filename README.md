@@ -1,6 +1,6 @@
 ## Mirai NewBing Bot
 
-Kyrin Chatbot is a QQ & Telegram bot that uses OpenAI's ChatGPT & Microsoft New Bing for chatting. It adds a custom text rejection feature from the original branch, as well as a custom rendering style and a character who plays a cute cat girl named Kyrin Chan.
+Kyrin Chatbot is a QQ & Telegram bot that uses OpenAI's ChatGPT & Microsoft New Bing for chatting. It adds a custom text rejection feature not included the original branch, as well as a custom rendering style and a character who plays a cute cat girl named Kyrin Chan.
 
 ## Features 💡
 
