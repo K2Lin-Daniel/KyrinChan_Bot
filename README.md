@@ -56,7 +56,7 @@
 * [x] 支持 Mirai、 go-cqhttp、 Telegram Bot
 
 
-* [交流群](https://jq.qq.com/?_wv=1027&k=voXtxBSw) 会发布最新的项目动态。  
+* [交流群（Discord）](https://discord.gg/hYSmQDJrHq)会发布最新的项目动态、问题答疑和交流 [（QQ 群 已满）](https://jq.qq.com/?_wv=1027&k=voXtxBSw) 。  
   加群之前先看[这里](https://github.com/lss233/chatgpt-mirai-qq-bot/issues)的内容能不能解决你的问题。  
   如果不能解决，把遇到的问题、**日志**和配置文件准备好后再提问。  
 * [调试群](https://jq.qq.com/?_wv=1027&k=TBX8Saq7) 这个群里有很多 ChatGPT QQ 机器人，不解答技术问题。 
@@ -369,6 +369,8 @@ auto_remove_old_conversations = true
 [[bing.accounts]]
 # 你的账号 Cookie，获取方法见 README
 cookie_content = 'MUID=xxxxx; SRCHD=AF=xxxx; SRCHUID=V=2&GUID=xxxxxxxx;  MicrosoftApplicationsTelemetryDeviceId=xxxxxx-xxxx-xxxx-xxx-xxxxx; ...一串很长的文本...'
+# 如果你想用代理（可能有BUG）
+# proxy="http://127.0.0.1:1080"
 # === Bing 设置部分结束
 
 [text_to_image]

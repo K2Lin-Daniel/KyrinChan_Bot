@@ -45,8 +45,6 @@ class BotManager:
         self.config = config
         self.openai = config.openai.accounts if config.openai else []
         self.bing = config.bing.accounts if config.bing else []
-        if config.openai.browserless_endpoint:
-            V1.BASE_URL = config.openai.browserless_endpoint
         try:
             os.mkdir('data')
             logger.warning(
@@ -65,6 +63,8 @@ class BotManager:
         if len(self.bing) > 0:
             self.login_bing()
         if len(self.openai) > 0:
+            if self.config.openai.browserless_endpoint:
+                V1.BASE_URL = self.config.openai.browserless_endpoint
             if self.config.openai.api_endpoint:
                 openai.api_base = self.config.openai.api_endpoint
             if not self.config.openai.browserless_endpoint.endswith("api/"):
@@ -93,9 +93,10 @@ class BotManager:
     def login_bing(self):
         for i, account in enumerate(self.bing):
             logger.info("正在解析第 {i} 个 Bing 账号", i=i + 1)
+            if proxy := self.__check_proxy(account.proxy):
+                account.proxy = proxy
             try:
                 self.bots["bing-cookie"].append(account)
-
                 logger.success("解析成功！", i=i + 1)
             except Exception as e:
                 logger.error("解析失败：")
