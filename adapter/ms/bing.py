@@ -42,7 +42,7 @@ class BingAdapter(BotAdapter):
 
     async def ask(self, prompt: str) -> Generator[str, None, None]:
         self.count = self.count + 1
-        remaining_conversations = f'💾Memory Limit：{self.count} / 15:\n'
+        remaining_conversations = '💾 ' + f"{'🟦' * self.count}{'⬜' * (15 - self.count)}" + '      \n\n'
         parsed_content = ''
         try:
             async for final, response in self.bot.ask_stream(prompt=prompt,
@@ -66,7 +66,7 @@ class BingAdapter(BotAdapter):
                             #parsed_content = ContentDFA.filter_all(parsed_content)
                             if ContentDFA.exists(parsed_content):
                                 logger.debug("Dangerous ASK:" + prompt + " Dangerous Content:" + parsed_content)
-                                yield "🚫此对话违反了凯琳酱的政策，请珍惜凯琳酱，不要询问敏感的问题喵~🌐 继续回复将会开启新会话~♻️"
+                                yield "🚫此对话违反了凯琳酱的政策，请珍惜凯琳酱，不要询问敏感的问题喵~ 继续回复将会开启新会话~♻️"
                                 await self.on_reset()
                                 return
                             for suggestion in suggestions:
