@@ -55,7 +55,7 @@ class BingAdapter(BotAdapter):
                     if len(response["item"].get('messages', [])) > 1:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
-                            parsed_content = parsed_content + '\n💡猜你想问：\n 喵~?'
+                            parsed_content = parsed_content + '\n💡Ask~?\n -Nya~?'
                             parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
                             parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
                             parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
