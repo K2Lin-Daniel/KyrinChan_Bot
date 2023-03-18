@@ -1,6 +1,6 @@
 # KyrinChan Bot🌸
 
-[![Docker Build](https://github.com/K2Lin-Daniel/KyrinChan_Bot/actions/workflows/docker-latest.yml/badge.svg)](https://github.com/K2Lin-Daniel/KyrinChan_Bot/actions/workflows/docker-latest.yml)
+![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/K2Lin-Daniel/KyrinChan_Bot/docker-latest.yml?color=%23fcd1d7&branch=main&label=Docker%20Build&style=for-the-badge) ![GitHub issues](https://img.shields.io/github/issues/K2Lin-Daniel/KyrinChan_Bot?color=%23fcd1d7&style=for-the-badge) ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/K2Lin-Daniel/KyrinChan_Bot?color=fcd1d7&label=Commit&style=for-the-badge)
 
 Kyrin Chatbot is a QQ & Telegram bot that uses OpenAI's ChatGPT & Microsoft New Bing for chatting. It adds a custom text rejection feature not included in the original branch, as well as a custom rendering style and a character who plays a cute cat girl named Kyrin Chan.
 
