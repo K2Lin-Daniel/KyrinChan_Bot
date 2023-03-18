@@ -1,4 +1,4 @@
-### KyrinChan Bot🌸
+# KyrinChan Bot🌸
 
 [![Docker Build](https://github.com/K2Lin-Daniel/KyrinChan_Bot/actions/workflows/docker-latest.yml/badge.svg)](https://github.com/K2Lin-Daniel/KyrinChan_Bot/actions/workflows/docker-latest.yml)
 
