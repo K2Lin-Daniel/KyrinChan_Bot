@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'browser-version'
+      - 'main'
 
 jobs:
   docker:
@@ -31,6 +31,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: lss233/chatgpt-mirai-qq-bot:browser-version
+          tags: k2lin/kyrinchan-bot:stable
           cache-from: type=gha
           cache-to: type=gha,mode=max
