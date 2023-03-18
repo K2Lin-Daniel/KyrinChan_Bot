@@ -1,6 +1,7 @@
 # KyrinChan Bot🌸
 
 [![Docker Build](https://github.com/K2Lin-Daniel/KyrinChan_Bot/actions/workflows/docker-latest.yml/badge.svg)](https://github.com/K2Lin-Daniel/KyrinChan_Bot/actions/workflows/docker-latest.yml)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FK2Lin-Daniel%2FKyrinChan_Bot.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FK2Lin-Daniel%2FKyrinChan_Bot?ref=badge_shield)
 
 Kyrin Chatbot is a QQ & Telegram bot that uses OpenAI's ChatGPT & Microsoft New Bing for chatting. It adds a custom text rejection feature not included in the original branch, as well as a custom rendering style and a character who plays a cute cat girl named Kyrin Chan.
 
@@ -61,3 +62,6 @@ Please follow these guidelines when contributing:
 ## License 📄
 
 This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FK2Lin-Daniel%2FKyrinChan_Bot.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FK2Lin-Daniel%2FKyrinChan_Bot?ref=badge_large)
