@@ -9,6 +9,9 @@ from exceptions import BotOperationNotSupportedException
 from loguru import logger
 import re
 
+from utils.detect import DFA
+
+ContentDFA = DFA(path="./utils/Danger.form")
 
 class BingAdapter(BotAdapter):
     cookieData = None
@@ -28,7 +31,7 @@ class BingAdapter(BotAdapter):
             name, value = line.split("=", 1)
             self.cookieData.append({"name": name, "value": value})
 
-        self.bot = EdgeChatbot(cookies=self.cookieData, proxy=account.proxy)
+        self.bot = EdgeChatbot(cookies=self.cookieData)
 
     async def rollback(self):
         raise BotOperationNotSupportedException()
@@ -39,7 +42,7 @@ class BingAdapter(BotAdapter):
 
     async def ask(self, prompt: str) -> Generator[str, None, None]:
         self.count = self.count + 1
-        remaining_conversations = f'剩余回复数：{self.count} / 15:  \n'
+        remaining_conversations = '💾 ' + f"{'🟦' * self.count}{'⬜' * (15 - self.count)}" + '      \n\n'
         parsed_content = ''
         try:
             async for final, response in self.bot.ask_stream(prompt=prompt,
@@ -47,22 +50,45 @@ class BingAdapter(BotAdapter):
                 if not final:
                     response = re.sub(r"\[\^\d+\^\]", "", response)
                     yield remaining_conversations + response
+                    parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
+                    parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
+                    parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
+                    parsed_content = parsed_content.replace("是Bing", "是凯琳酱~")
+                    parsed_content = parsed_content.replace("必应搜索", "凯琳酱~")
+                    parsed_content = parsed_content.replace("搜索引擎", "猫娘")
+                    parsed_content = parsed_content.replace("您好，", "Hi~")
+                    parsed_content = parsed_content.replace("你好，", "Hi~")
                     parsed_content = response
                 else:
                     if len(response["item"].get('messages', [])) > 1:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
-                            parsed_content = parsed_content + '\n猜你想问：  \n'
+                            parsed_content = parsed_content + '\n💡喵~?\n '
+                            parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
+                            parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
+                            parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
+                            parsed_content = parsed_content.replace("是Bing", "是凯琳酱~")
+                            parsed_content = parsed_content.replace("必应搜索", "凯琳酱~")
+                            parsed_content = parsed_content.replace("搜索引擎", "猫娘")
+                            parsed_content = parsed_content.replace("您好，", "Hi~")
+                            parsed_content = parsed_content.replace("你好，", "Hi~")
+                            #parsed_content = ContentDFA.filter_all(parsed_content)
+                            if ContentDFA.exists(parsed_content):
+                                logger.debug("Dangerous ASK:" + prompt + " Dangerous Content:" + parsed_content)
+                                yield "🚫此对话违反了凯琳酱的政策 请珍惜凯琳酱，不要询问敏感的问题喵~ 继续回复将会开启新会话~♻️"
+                                await self.on_reset()
+                                return
                             for suggestion in suggestions:
-                                parsed_content = parsed_content + f"* {suggestion.get('text')}  \n"
+                                parsed_content = parsed_content + f"- {suggestion.get('text')}\n"
+                            logger.debug("Ask:" + prompt + " Reply Content:" + parsed_content)
                     if parsed_content == '':
-                        yield "Bing 已结束本次会话。继续发送消息将重新开启一个新会话。"
+                        yield "⌛此对话已终结了喵 继续回复将开启新会话~♻️"
                         await self.on_reset()
                         return
                     yield remaining_conversations + parsed_content
         except Exception as e:
             logger.exception(e)
-            yield "Bing 已结束本次会话。继续发送消息将重新开启一个新会话。"
+            yield "⌛此对话已终结了喵 继续回复将开启新会话~🔁"
             await self.on_reset()
             return
 
