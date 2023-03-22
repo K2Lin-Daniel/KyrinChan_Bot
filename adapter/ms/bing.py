@@ -12,7 +12,7 @@ import re
 
 from utils.detect import DFA
 
-ContentDFA = DFA(path="./utils/Danger.form")
+ContentDFA = DFA(path="./external/Danger.form")
 
 class BingAdapter(BotAdapter):
     cookieData = None
