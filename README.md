@@ -43,6 +43,8 @@ bot_token = "your Bot token"
 # If deployed in China, fill this to set proxy
 # If not filled, it will read the system proxy settings
 proxy = "http://localhost:1080"
+# 管理员的 chat id
+manager_chat = 1234567890
 ```
 
 - Find your created bot on Telegram and send `/start` to start chatting👍

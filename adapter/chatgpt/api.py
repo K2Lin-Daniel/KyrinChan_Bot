@@ -42,10 +42,23 @@ class ChatGPTAPIAdapter(BotAdapter):
         self.bot.conversation[self.session_id] = [
             {"role": "system", "content": self.bot.system_prompt}
         ]
+        self.current_model = "gpt-3.5-turbo"
+        self.supported_models = [
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-0301",
+            "gpt-4",
+            "gpt-4-0314",
+            "gpt-4-32k",
+            "gpt-4-32k-0314",
+        ]
+
+    async def switch_model(self, model_name):
+        self.current_model = model_name
+        self.bot.engine = self.current_model
 
     async def rollback(self):
         if len(self.bot.conversation[self.session_id]) > 0:
-            self.bot.rollback(convo_id=self.session_id)
+            self.bot.rollback(convo_id=self.session_id, n=2)
             return True
         else:
             return False
@@ -94,7 +107,7 @@ class ChatGPTAPIAdapter(BotAdapter):
         logger.debug("[ChatGPT-API] 响应：" + full_response)
 
     async def preset_ask(self, role: str, text: str):
-        if role.endswith('bot') or role == 'chatgpt':
+        if role.endswith('bot') or role in ['assistant', 'chatgpt']:
             logger.debug(f"[预设] 响应：{text}")
             yield text
             role = 'assistant'

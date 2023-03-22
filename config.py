@@ -41,6 +41,8 @@ class TelegramBot(BaseModel):
     """Bot 大爹给的 token"""
     proxy: Optional[str] = None
     """可选的代理地址，留空则检测系统代理"""
+    manager_chat: Optional[int] = None
+    """管理员的 chat id"""
 
 
 class OpenAIGPT3Params(BaseModel):
@@ -77,6 +79,8 @@ class OpenAIAuthBase(BaseModel):
     """使用 ChatGPT Plus"""
     gpt4: bool = False
     """使用 GPT-4"""
+    model: Optional[str] = None
+    """使用的默认模型，此选项优先级最高"""
     verbose: bool = False
     """启用详尽日志模式"""
     title_pattern: str = ""
@@ -117,6 +121,7 @@ class BingCookiePath(BaseModel):
     """Bing 的 Cookie 文件内容"""
     proxy: Optional[str] = None
     """可选的代理地址，留空则检测系统代理"""
+
 
 class BingAuths(BaseModel):
     accounts: List[BingCookiePath] = []
@@ -160,6 +165,8 @@ class Trigger(BaseModel):
     """回滚会话的命令"""
     prefix_image: List[str] = ["画", "看"]
     """图片创建前缀"""
+    switch_model: str = r"切换模型 (.+)"
+    """切换当前上下文的模型"""
     switch_command: str = r"切换AI (.+)"
     """切换AI的命令"""
     image_only_command: List[str] = ["图片模式"]
@@ -168,13 +175,19 @@ class Trigger(BaseModel):
     """切换至文本回复模式"""
     ignore_regex: List[str] = []
     """忽略满足条件的正则表达式"""
-
+    allowed_models: List[str] = [
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-0301",
+        "text-davinci-002-render-sha",
+        "text-davinci-002-render-paid"
+    ]
+    """允许普通用户切换的模型列表"""
 
 class Response(BaseModel):
     default_ai: Union[str, None] = None
     """默认使用的 AI 类型，不填写时自动推测"""
 
-    error_format: str = "出现故障！如果这个问题持续出现，请和我说“重置会话” 来开启一段新的会话，或者发送 “回滚对话” 来回溯到上一条对话，你上一条说的我就当作没看见。"
+    error_format: str = "出现故障！如果这个问题持续出现，请和我说“重置会话” 来开启一段新的会话，或者发送 “回滚对话” 来回溯到上一条对话，你上一条说的我就当作没看见。\n原因：{exc}"
     """发生错误时发送的消息，请注意可以插入 {exc} 作为异常占位符"""
 
     error_network_failure: str = "网络故障！连接 OpenAI 服务器失败，我需要更好的网络才能服务！\n{exc}"

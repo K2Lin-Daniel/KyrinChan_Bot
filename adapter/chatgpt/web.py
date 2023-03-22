@@ -9,7 +9,7 @@ from adapter.botservice import BotAdapter
 from chatbot.chatgpt import ChatGPTBrowserChatbot
 
 from constants import config, botManager
-from revChatGPT.V1 import Error as V1Error
+from revChatGPT.typing import Error as V1Error
 
 from exceptions import BotRatelimitException, ConcurrentMessageException
 
@@ -33,6 +33,25 @@ class ChatGPTWebAdapter(BotAdapter):
         self.conversation_id = None
         self.parent_id = None
         super().__init__()
+        self.current_model = self.bot.account.model or (
+            'text-davinci-002-render-paid'
+            if self.bot.account.paid else
+            'text-davinci-002-render-sha'
+        )
+        self.supported_models = ['text-davinci-002-render-sha']
+        if self.bot.account.paid:
+            self.supported_models.append('text-davinci-002-render-paid')
+            self.supported_models.append('gpt-4')
+
+    async def switch_model(self, model_name):
+        if self.bot.account.auto_remove_old_conversations:
+            if self.conversation_id is not None:
+                await self.bot.delete_conversation(self.conversation_id)
+        self.conversation_id = None
+        self.parent_id = None
+        # self.current_model = model_name
+        raise Exception("此 AI 暂不支持切换模型的操作！")
+
 
     async def rollback(self):
         if len(self.parent_id_prev_queue) > 0:
@@ -44,35 +63,15 @@ class ChatGPTWebAdapter(BotAdapter):
     async def on_reset(self):
         if self.bot.account.auto_remove_old_conversations:
             if self.conversation_id is not None:
-                self.bot.delete_conversation(self.conversation_id)
+                await self.bot.delete_conversation(self.conversation_id)
         self.conversation_id = None
         self.parent_id = None
         self.bot = botManager.pick('chatgpt-web')
 
-    def ask_sync(self, sync_q, prompt):
-        try:
-            for resp in self.bot.ask(prompt, self.conversation_id, self.parent_id):
-                sync_q.put(resp)
-            sync_q.put(None)
-        except Exception as e:
-            sync_q.put(e)
-        sync_q.join()
-
     async def ask(self, prompt: str) -> Generator[str, None, None]:
         try:
-            queue: janus.Queue[Union[str, Exception, None]] = janus.Queue()
-            loop = asyncio.get_running_loop()
-            future = loop.run_in_executor(None, self.ask_sync, queue.sync_q, prompt)
             last_response = None
-            while not queue.async_q.closed:
-                resp = await queue.async_q.get()
-                queue.async_q.task_done()
-                if isinstance(resp, Exception):
-                    # 出现了错误
-                    raise resp
-                elif resp is None:
-                    # 发完了
-                    break
+            async for resp in self.bot.ask(prompt, self.conversation_id, self.parent_id):
                 last_response = resp
                 if self.conversation_id:
                     self.conversation_id_prev_queue.append(self.conversation_id)
@@ -83,17 +82,13 @@ class ChatGPTWebAdapter(BotAdapter):
                 if not self.conversation_id:
                     self.conversation_id = resp["conversation_id"]
                     if self.bot.account.title_pattern:
-                        self.bot.rename_conversation(self.conversation_id, self.bot.account.title_pattern
-                                                     .format(session_id=self.session_id))
+                        await self.bot.rename_conversation(self.conversation_id, self.bot.account.title_pattern
+                                                           .format(session_id=self.session_id))
 
                 # 确保是当前的会话，才更新 parent_id
                 if self.conversation_id == resp["conversation_id"]:
                     self.parent_id = resp["parent_id"]
                 yield resp["message"]
-
-            await future
-            queue.close()
-            await queue.wait_closed()
             if last_response:
                 logger.debug(f"[ChatGPT-Web] {last_response['conversation_id']} - {last_response['message']}")
         except AttributeError as e:
@@ -115,7 +110,7 @@ class ChatGPTWebAdapter(BotAdapter):
             raise e
 
     async def preset_ask(self, role: str, text: str):
-        if role.endswith('bot') or role == 'chatgpt':
+        if role.endswith('bot') or role in ['assistant', 'chatgpt']:
             logger.debug(f"[预设] 响应：{text}")
             yield text
         else:

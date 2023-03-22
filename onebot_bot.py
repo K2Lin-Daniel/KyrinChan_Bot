@@ -3,6 +3,7 @@ import re
 import time
 from typing import Union, Optional
 
+import asyncio
 from graia.ariadne.message.chain import MessageChain
 from graia.ariadne.message.element import Image, At, Plain
 from aiocqhttp import CQHttp, Event, MessageSegment
@@ -16,10 +17,6 @@ from universal import handle_message
 from middlewares.ratelimit import manager as ratelimit_manager
 
 bot = CQHttp()
-
-
-botManager.login()
-
 
 class MentionMe:
     """At 账号或者提到账号群昵称"""
@@ -36,6 +33,7 @@ class MentionMe:
             if member_info.get("nickname") and chain.startswith(member_info.get("nickname")):
                 return chain.removeprefix(" ")
         raise ExecutionStop
+
 
 # TODO: use MessageSegment
 # https://github.com/nonebot/aiocqhttp/blob/master/docs/common-topics.md
@@ -94,7 +92,13 @@ async def _(event: Event):
         await bot.send(event, resp)
 
     try:
-        await handle_message(response, f"friend-{event.user_id}", msg.display, chain)
+        await handle_message(
+            response,
+            f"friend-{event.user_id}",
+            msg.display,
+            chain,
+            is_manager=event.user_id == config.onebot.manager_qq
+        )
     except Exception as e:
         print(e)
 
@@ -122,7 +126,12 @@ async def _(event: Event):
             resp = MessageSegment.reply(event.message_id) + resp
         await bot.send(event, resp)
 
-    await handle_message(response, f"group-{event.user_id}", chain.display)
+    await handle_message(
+        response,
+        f"group-{event.group_id}",
+        chain.display,
+        is_manager=event.user_id == config.onebot.manager_qq
+    )
 
 
 @bot.on_message()
@@ -136,7 +145,7 @@ async def _(event: Event):
     await bot.send(event, "配置文件重新载入完毕！")
     await bot.send(event, "重新登录账号中，详情请看控制台日志……")
     constants.botManager = BotManager(config)
-    botManager.login()
+    await botManager.login()
     await bot.send(event, "登录结束")
 
 
@@ -179,6 +188,45 @@ async def _(event: Event):
     current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
     return await bot.send(event,
                           f"{msg_type} {msg_id} 的额度使用情况：{limit['rate']}条/小时， 当前已发送：{usage['count']}条消息\n整点重置，当前服务器时间：{current_time}")
+
+
+@bot.on_message()
+async def _(event: Event):
+    pattern = ".查询API余额"
+    if not event.message.strip() == pattern:
+        return
+    if not event.user_id == config.onebot.manager_qq:
+        return await bot.send(event, "您没有权限执行这个操作")
+    tasklist = []
+    bots = botManager.bots.get("openai-api", [])
+    for account in bots:
+        tasklist.append(botManager.check_api_info(account))
+    msg = await bot.send(event, "查询中，请稍等……")
+
+    nodes = []
+    for account, r in zip(bots, await asyncio.gather(*tasklist)):
+        grant_used, grant_available, has_payment_method, total_usage, hard_limit_usd = r
+        total_available = grant_available
+        if has_payment_method:
+            total_available = total_available + hard_limit_usd - total_usage
+        answer = '' + account.api_key[:6] + "**" + account.api_key[-3:] + '\n'
+        answer = answer + f' - 本月已用: {round(total_usage, 2)}$\n' \
+                          f' - 可用：{round(total_available, 2)}$\n' \
+                          f' - 绑卡：{has_payment_method}'
+        node = MessageSegment.node_custom(event.self_id, "ChatGPT", answer)
+        nodes.append(node)
+    if len(nodes) == 0:
+        await bot.send(event, "没有查询到任何 API！")
+        return
+    if event.group_id:
+        await bot.call_action("send_group_forward_msg", group_id=event.group_id, messages=nodes)
+    else:
+        await bot.call_action("send_private_forward_msg", user_id=event.user_id, messages=nodes)
+
+
+@bot.on_startup
+async def startup():
+    await botManager.login()
 
 
 bot.run(host=config.onebot.reverse_ws_host, port=config.onebot.reverse_ws_port)

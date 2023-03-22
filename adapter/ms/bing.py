@@ -50,16 +50,25 @@ class BingAdapter(BotAdapter):
                 if not final:
                     response = re.sub(r"\[\^\d+\^\]", "", response)
                     yield remaining_conversations + response
+                    parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
+                    parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
+                    parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
+                    parsed_content = parsed_content.replace("是Bing", "是凯琳酱~")
+                    parsed_content = parsed_content.replace("必应搜索", "凯琳酱~")
+                    parsed_content = parsed_content.replace("搜索引擎", "猫娘")
+                    parsed_content = parsed_content.replace("您好，", "Hi~")
+                    parsed_content = parsed_content.replace("你好，", "Hi~")
                     parsed_content = response
                 else:
                     if len(response["item"].get('messages', [])) > 1:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
-                            parsed_content = parsed_content + '\n💡Ask~?\n -Nya~?'
+                            parsed_content = parsed_content + '\n💡喵~?\n '
                             parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
                             parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
                             parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
                             parsed_content = parsed_content.replace("是Bing", "是凯琳酱~")
+                            parsed_content = parsed_content.replace("必应搜索", "凯琳酱~")
                             parsed_content = parsed_content.replace("搜索引擎", "猫娘")
                             parsed_content = parsed_content.replace("您好，", "Hi~")
                             parsed_content = parsed_content.replace("你好，", "Hi~")
@@ -70,7 +79,7 @@ class BingAdapter(BotAdapter):
                                 await self.on_reset()
                                 return
                             for suggestion in suggestions:
-                                parsed_content = parsed_content + f"- {suggestion.get('text')}\n"
+                                parsed_content = parsed_content + f"* {suggestion.get('text')}  \n"
                     if parsed_content == '':
                         yield "⌛此对话已终结了喵 继续回复将开启新会话~♻️"
                         await self.on_reset()
