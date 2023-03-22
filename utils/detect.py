@@ -25,7 +25,7 @@ class DFA:
         self.ban_words_list = list()
         self.ban_words_dict = dict()
         if not path:
-            self.path = 'utils/Danger.form'
+            self.path = 'external/Danger.form'
         else:
             self.path = path
         self.get_words()
