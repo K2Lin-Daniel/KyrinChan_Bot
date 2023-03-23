@@ -11,17 +11,16 @@ from urllib3.exceptions import MaxRetryError
 from constants import config
 from conversation import ConversationHandler
 from exceptions import PresetNotFoundException, BotRatelimitException, ConcurrentMessageException, \
-    BotTypeNotFoundException, NoAvailableBotException, BotOperationNotSupportedException
+    BotTypeNotFoundException, NoAvailableBotException, BotOperationNotSupportedException, CommandRefusedException
 from middlewares.baiducloud import MiddlewareBaiduCloud
 from middlewares.concurrentlock import MiddlewareConcurrentLock
 from middlewares.ratelimit import MiddlewareRatelimit
 from middlewares.timeout import MiddlewareTimeout
-from renderer.renderer import MarkdownImageRenderer, FullTextRenderer
 
 middlewares = [MiddlewareTimeout(), MiddlewareRatelimit(), MiddlewareBaiduCloud(), MiddlewareConcurrentLock()]
 
 
-async def handle_message(_respond: Callable, session_id: str, message: str, chain: MessageChain = MessageChain("Unsupported"), is_manager: bool = False):
+async def handle_message(_respond: Callable, session_id: str, message: str, chain: MessageChain = MessageChain("Unsupported"), is_manager: bool = False, nickname: str = '某人'):
     """正常聊天"""
     if not message.strip():
         return config.response.placeholder
@@ -66,9 +65,10 @@ async def handle_message(_respond: Callable, session_id: str, message: str, chai
     async def respond(msg: str):
         if not msg:
             return
-        await _respond(msg)
+        ret = await _respond(msg)
         for m in middlewares:
             await m.on_respond(session_id, message, msg)
+        return ret
 
     async def request(_session_id, prompt: str, conversation_context, _respond):
         try:
@@ -93,18 +93,21 @@ async def handle_message(_respond: Callable, session_id: str, message: str, chai
             elif prompt in config.trigger.rollback_command:
                 task = conversation_context.rollback()
 
+            elif prompt in config.trigger.mixed_only_command:
+                conversation_context.switch_renderer("mixed")
+                await respond(f"已切换至图文混合模式，接下来我的回复将会以图文混合的方式呈现！")
+                return
+
             elif prompt in config.trigger.image_only_command:
-                conversation_context.renderer = MarkdownImageRenderer()
+                conversation_context.switch_renderer("image")
                 await respond(f"已切换至纯图片模式，接下来我的回复将会以图片呈现！")
                 return
 
             elif prompt in config.trigger.text_only_command:
-                if config.text_to_image.always:
-                    await respond(f"不要！由于管理员设置了强制开启图片模式，无法切换到文本模式！")
-                else:
-                    conversation_context.renderer = FullTextRenderer()
-                    await respond(f"已切换至纯文字模式，接下来我的回复将会以文字呈现（被吞除外）！")
+                conversation_context.switch_renderer("text")
+                await respond(f"已切换至纯文字模式，接下来我的回复将会以文字呈现（被吞除外）！")
                 return
+
             elif switch_model_search := re.search(config.trigger.switch_model, prompt):
                 model_name = switch_model_search.group(1).strip()
                 if model_name in conversation_context.supported_models:
@@ -130,9 +133,12 @@ async def handle_message(_respond: Callable, session_id: str, message: str, chai
 
             # 没有任务那就聊天吧！
             if not task:
-                task = conversation_context.ask(prompt=prompt, chain=chain)
+                task = conversation_context.ask(prompt=prompt, chain=chain, name=nickname)
             async for rendered in task:
                 if rendered:
+                    if str(rendered).strip() == '':
+                        logger.warning("检测到内容为空的输出，已忽略")
+                        continue
                     action = lambda session_id, prompt, rendered, respond: respond(rendered)
                     for m in middlewares:
                         action = wrap_respond(action, m)
@@ -141,6 +147,8 @@ async def handle_message(_respond: Callable, session_id: str, message: str, chai
                     await action(session_id, prompt, rendered, respond)
             for m in middlewares:
                 await m.handle_respond_completed(session_id, prompt, respond)
+        except CommandRefusedException as e:
+            await respond(str(e))
         except openai.error.InvalidRequestError as e:
             await respond("服务器拒绝了您的请求，原因是" + str(e))
         except BotOperationNotSupportedException:

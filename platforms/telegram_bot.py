@@ -25,6 +25,15 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     if type is None:
         return
 
+    bot_username = (await context.bot.get_me()).username
+
+    if type == 'group' and (
+            bot_username not in update.message.text and (
+                update.message.reply_to_message is None or update.message.reply_to_message.from_user is None or update.message.reply_to_message.from_user.username != bot_username)
+    ):
+        logger.debug(f"忽略消息（未满足匹配规则）: {update.message.text} ")
+        return
+
     async def response(msg):
         if isinstance(msg, MessageChain):
             for elem in msg:
@@ -40,8 +49,9 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     await handle_message(
         response,
         f"{type}-{update.message.chat.id}",
-        update.message.text,
-        is_manager=update.message.from_user.id == config.telegram.manager_chat
+        update.message.text.replace(f"@{bot_username}", '').strip(),
+        is_manager=update.message.from_user.id == config.telegram.manager_chat,
+        nickname=update.message.from_user.full_name or "群友"
     )
 
 
@@ -69,7 +79,7 @@ async def on_check_api(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(answer)
 
 
-async def main() -> None:
+async def bootstrap() -> None:
     """Set up the application and a custom webserver."""
     app = ApplicationBuilder() \
         .proxy_url(config.telegram.proxy or openai.proxy) \
@@ -87,7 +97,7 @@ async def main() -> None:
     await app.updater.start_polling(drop_pending_updates=True)
 
 
-# asyncio.run(main())
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
-loop.run_forever()
+def main():
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(bootstrap())
+    loop.run_forever()

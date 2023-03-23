@@ -24,6 +24,7 @@ class BingAdapter(BotAdapter):
     """实例"""
 
     def __init__(self, session_id: str = "unknown", conversation_style: ConversationStyle = ConversationStyle.creative):
+        super().__init__(session_id)
         self.session_id = session_id
         self.conversation_style = conversation_style
         account = botManager.pick('bing-cookie')
@@ -85,12 +86,14 @@ class BingAdapter(BotAdapter):
                                 return
                             for suggestion in suggestions:
                                 parsed_content = parsed_content + f"* {suggestion.get('text')}  \n"
+                                yield parsed_content
                     if parsed_content == remaining_conversations:
                         yield "⌛此对话已终结了喵 继续回复将开启新会话~♻️"
                         await self.on_reset()
                         return
 
                 yield parsed_content
+            logger.debug("[Bing AI 响应] " + parsed_content)
         except Exception as e:
             logger.exception(e)
             yield "⌛此对话已终结了喵 继续回复将开启新会话~🔁"

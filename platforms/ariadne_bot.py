@@ -89,7 +89,8 @@ async def friend_message_listener(app: Ariadne, target: Friend, source: Source,
         f"friend-{target.id}",
         chain.display,
         chain,
-        is_manager=target.id == config.mirai.manager_qq
+        is_manager=target.id == config.mirai.manager_qq,
+        nickname=target.nickname
     )
 
 
@@ -120,7 +121,8 @@ async def group_message_listener(target: Group, source: Source, chain: GroupTrig
         f"group-{target.id}",
         chain.display,
         chain,
-        is_manager=member.id == config.mirai.manager_qq
+        is_manager=member.id == config.mirai.manager_qq,
+        nickname=member.name
     )
 
 
@@ -242,4 +244,5 @@ async def update_rate(app: Ariadne, event: MessageEvent, sender: Union[Friend, M
     finally:
         raise ExecutionStop()
 
-app.launch_blocking()
+def main():
+    app.launch_blocking()

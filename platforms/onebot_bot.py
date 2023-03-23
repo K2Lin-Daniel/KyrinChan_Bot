@@ -1,4 +1,3 @@
-# bot.py
 import re
 import time
 from typing import Union, Optional
@@ -87,9 +86,9 @@ def response(event, is_group: bool):
     async def respond(resp):
         try:
             if isinstance(resp, MessageChain):
-                return await bot.send(event, transform_from_message_chain(resp))
-            if isinstance(resp, Image):
-                return await bot.send(event, MessageSegment.image(f"base64://{resp.base64}"))
+                resp = transform_from_message_chain(resp)
+            elif isinstance(resp, Image):
+                resp = MessageSegment.image(f"base64://{resp.base64}")
             if config.response.quote:
                 resp = MessageSegment.reply(event.message_id) + resp
                 return await bot.send(event, resp)
@@ -122,7 +121,8 @@ async def _(event: Event):
             f"friend-{event.user_id}",
             msg.display,
             chain,
-            is_manager=event.user_id == config.onebot.manager_qq
+            is_manager=event.user_id == config.onebot.manager_qq,
+            nickname=event.sender.get("nickname", "好友")
         )
     except Exception as e:
         print(e)
@@ -148,7 +148,8 @@ async def _(event: Event):
         response(event, True),
         f"group-{event.group_id}",
         chain.display,
-        is_manager=event.user_id == config.onebot.manager_qq
+        is_manager=event.user_id == config.onebot.manager_qq,
+        nickname=event.sender.get("nickname", "群友")
     )
 
 
@@ -246,5 +247,5 @@ async def _(event: Event):
 async def startup():
     await botManager.login()
 
-
-bot.run(host=config.onebot.reverse_ws_host, port=config.onebot.reverse_ws_port)
+def main():
+    bot.run(host=config.onebot.reverse_ws_host, port=config.onebot.reverse_ws_port)

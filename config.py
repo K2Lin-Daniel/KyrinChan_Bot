@@ -44,6 +44,9 @@ class TelegramBot(BaseModel):
     manager_chat: Optional[int] = None
     """管理员的 chat id"""
 
+class DiscordBot(BaseModel):
+    bot_token: str
+    """Discord Bot 的 token"""
 
 class OpenAIGPT3Params(BaseModel):
     temperature: float = 0.5
@@ -123,6 +126,11 @@ class BingCookiePath(BaseModel):
     proxy: Optional[str] = None
     """可选的代理地址，留空则检测系统代理"""
 
+class BardCookiePath(BaseModel):
+    cookie_content: str
+    """Bard 的 Cookie 文件内容"""
+    proxy: Optional[str] = None
+    """可选的代理地址，留空则检测系统代理"""
 
 class BingAuths(BaseModel):
     show_suggestions: bool = True
@@ -132,6 +140,9 @@ class BingAuths(BaseModel):
     accounts: List[BingCookiePath] = []
     """Bing 的账号列表"""
 
+class BardAuths(BaseModel):
+    accounts: List[BardCookiePath] = []
+    """Bing 的账号列表"""
 
 class TextToImage(BaseModel):
     always: bool = False
@@ -174,6 +185,8 @@ class Trigger(BaseModel):
     """切换当前上下文的模型"""
     switch_command: str = r"切换AI (.+)"
     """切换AI的命令"""
+    mixed_only_command: List[str] = ["图文混合模式"]
+    """切换至图文混合模式"""
     image_only_command: List[str] = ["图片模式"]
     """切换至图片回复模式"""
     text_only_command: List[str] = ["文本模式"]
@@ -299,8 +312,10 @@ class Config(BaseModel):
     onebot: Optional[Onebot] = None
     mirai: Optional[Mirai] = None
     telegram: Optional[TelegramBot] = None
+    discord: Optional[DiscordBot] = None
     openai: OpenAIAuths = OpenAIAuths()
     bing: BingAuths = BingAuths()
+    bard: BardAuths = BardAuths()
     text_to_image: TextToImage = TextToImage()
     trigger: Trigger = Trigger()
     response: Response = Response()
