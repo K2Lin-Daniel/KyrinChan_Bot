@@ -69,7 +69,7 @@ class BingAdapter(BotAdapter):
                     if len(response["item"].get('messages', [])) > 1 and config.bing.show_suggestions:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
-                            parsed_content = parsed_content + '\n💡喵~?\n '
+                            parsed_content = parsed_content + '  \n\n 💡喵~ 想知道什么?  \n '
                             parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
                             parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
                             parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
@@ -85,14 +85,13 @@ class BingAdapter(BotAdapter):
                                 await self.on_reset()
                                 return
                             for suggestion in suggestions:
-                                parsed_content = parsed_content + f"* {suggestion.get('text')}  \n"
+                                parsed_content = parsed_content + f"- {suggestion.get('text')}  \n "
                                 yield parsed_content
                     if parsed_content == remaining_conversations:
                         yield "⌛此对话已终结了喵 继续回复将开启新会话~♻️"
                         await self.on_reset()
                         return
-
-                yield parsed_content
+                    
             logger.debug("Content:" + parsed_content)
         except Exception as e:
             logger.exception(e)
