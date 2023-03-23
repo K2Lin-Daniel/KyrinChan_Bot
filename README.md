@@ -16,8 +16,8 @@ Kyrin Chatbot is a QQ & Telegram bot that uses OpenAI's ChatGPT & Microsoft New 
 
 To install Kyrin Chatbot, you need to have Python 3.6 or higher and pip installed on your system. Then follow these steps:
 
-1. Clone this repository: `git clone https://github.com/K2Lin-Daniel/mirai-newbing-bot.git`
-2. Enter the project directory: `cd mirai-newbing-bot`
+1. Clone this repository: `git clone https://github.com/K2Lin-Daniel/KyrinChan_Bot.git`
+2. Enter the project directory: `cd KyrinChan_Bot`
 3. Install the required dependencies: `pip3 install -r requirements.txt`
 4. Create a config file: `cp config.example.cfg config.cfg`
 5. Edit the config file with your own settings (see below)
