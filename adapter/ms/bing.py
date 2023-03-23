@@ -33,7 +33,7 @@ class BingAdapter(BotAdapter):
             name, value = line.split("=", 1)
             self.cookieData.append({"name": name, "value": value})
 
-        self.bot = EdgeChatbot(cookies=self.cookieData, proxy=account.proxy)
+        self.bot = EdgeChatbot(cookies=self.cookieData)
 
     async def rollback(self):
         raise BotOperationNotSupportedException()
@@ -93,7 +93,7 @@ class BingAdapter(BotAdapter):
                         return
 
                 yield parsed_content
-            logger.debug("[Bing AI 响应] " + parsed_content)
+            logger.debug("Content:" + parsed_content)
         except Exception as e:
             logger.exception(e)
             yield "⌛此对话已终结了喵 继续回复将开启新会话~🔁"
