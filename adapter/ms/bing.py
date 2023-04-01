@@ -74,7 +74,7 @@ class BingAdapter(BotAdapter):
                     if len(response["item"].get('messages', [])) > 1 and config.bing.show_suggestions:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
-                            parsed_content = parsed_content + '  \n\n 💡喵~ 想知道什么?  \n '
+                            parsed_content = parsed_content + '  \n 💡喵~ 想知道什么?  \n '
                             parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
                             parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
                             parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
@@ -90,8 +90,8 @@ class BingAdapter(BotAdapter):
                                 await self.on_reset()
                                 return
                             for suggestion in suggestions:
-                                parsed_content = parsed_content + f"* {suggestion.get('text')}  \n"
-                        yield parsed_content
+                                parsed_content = parsed_content + f"- {suggestion.get('text')}  \n"
+                            yield parsed_content
                     parsed_content = parsed_content + remaining_conversations
                     # not final的parsed_content已经yield走了，只能在末尾加剩余回复数，或者改用EdgeGPT自己封装的ask之后再正则替换
                     if parsed_content == remaining_conversations:  # No content
