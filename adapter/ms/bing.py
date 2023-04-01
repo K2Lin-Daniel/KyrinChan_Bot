@@ -91,14 +91,14 @@ class BingAdapter(BotAdapter):
                                 return
                             for suggestion in suggestions:
                                 parsed_content = parsed_content + f"- {suggestion.get('text')}  \n"
-                            yield parsed_content
+                        yield parsed_content
                     parsed_content = parsed_content + remaining_conversations
                     # not final的parsed_content已经yield走了，只能在末尾加剩余回复数，或者改用EdgeGPT自己封装的ask之后再正则替换
                     if parsed_content == remaining_conversations:  # No content
                         yield "⌛此对话已终结了喵 继续回复将开启新会话~♻️"
                         await self.on_reset()
                         return
-                    
+                yield parsed_content
             logger.debug("Content:" + parsed_content)
         except Exception as e:
             logger.exception(e)
