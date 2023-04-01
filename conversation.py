@@ -1,26 +1,28 @@
 import io
-import re
 from datetime import datetime
 from typing import List, Dict, Optional
 
 from EdgeGPT import ConversationStyle
 from PIL import Image
 from graia.amnesia.message import MessageChain
-from graia.ariadne.message.element import Image as GraiaImage
+from graia.ariadne.message.element import Image as GraiaImage, Element
 from loguru import logger
 
+from adapter.baidu.yiyan import YiyanAdapter
 from adapter.botservice import BotAdapter
 from adapter.chatgpt.api import ChatGPTAPIAdapter
 from adapter.chatgpt.web import ChatGPTWebAdapter
-from adapter.ms.bing import BingAdapter
 from adapter.google.bard import BardAdapter
+from adapter.ms.bing import BingAdapter
 from adapter.openai.api import OpenAIAPIAdapter
+from adapter.quora.poe import PoeBot, PoeAdapter
+from adapter.thudm.chatglm_6b import ChatGLM6BAdapter
 from constants import config
 from exceptions import PresetNotFoundException, BotTypeNotFoundException, NoAvailableBotException, \
     CommandRefusedException
 from renderer import Renderer
-from renderer.renderer import MixedContentMessageChainRenderer, MarkdownImageRenderer, PlainTextRenderer
 from renderer.merger import BufferedContentMerger, LengthContentMerger
+from renderer.renderer import MixedContentMessageChainRenderer, MarkdownImageRenderer, PlainTextRenderer
 from renderer.splitter import MultipleSegmentSplitter
 
 handlers = dict()
@@ -45,6 +47,9 @@ class ConversationContext:
     preset_decoration_format: Optional[str] = "{prompt}"
     """预设装饰文本"""
 
+    conversation_voice: Optional[str] = None
+    """语音音色"""
+
     @property
     def current_model(self):
         return self.adapter.current_model
@@ -58,10 +63,15 @@ class ConversationContext:
 
         self.switch_renderer()
 
+        if config.text_to_speech.always:
+            self.conversation_voice = config.text_to_speech.default
+
         if _type == 'chatgpt-web':
             self.adapter = ChatGPTWebAdapter(self.session_id)
         elif _type == 'chatgpt-api':
             self.adapter = ChatGPTAPIAdapter(self.session_id)
+        elif PoeBot.parse(_type):
+            self.adapter = PoeAdapter(self.session_id, PoeBot.parse(_type))
         elif _type == 'bing':
             self.adapter = BingAdapter(self.session_id)
         elif _type == 'bing-c':
@@ -72,6 +82,10 @@ class ConversationContext:
             self.adapter = BingAdapter(self.session_id, ConversationStyle.precise)
         elif _type == 'bard':
             self.adapter = BardAdapter(self.session_id)
+        elif _type == 'yiyan':
+            self.adapter = YiyanAdapter(self.session_id)
+        elif _type == 'chatglm-api':
+            self.adapter = ChatGLM6BAdapter(self.session_id)
         else:
             raise BotTypeNotFoundException(_type)
         self.type = _type
@@ -112,7 +126,7 @@ class ConversationContext:
     async def ask(self, prompt: str, chain: MessageChain = None, name: str = None):
         # 检查是否为 画图指令
         for prefix in config.trigger.prefix_image:
-            if prompt.startswith(prefix):
+            if prompt.startswith(prefix) and not isinstance(self.adapter, YiyanAdapter):
                 if not self.openai_api:
                     yield "没有 OpenAI API-key，无法使用画图功能！"
                 prompt = prompt.removeprefix(prefix)
@@ -135,7 +149,10 @@ class ConversationContext:
 
         async with self.renderer:
             async for item in self.adapter.ask(prompt):
-                yield await self.renderer.render(item)
+                if isinstance(item, Element):
+                    yield item
+                else:
+                    yield await self.renderer.render(item)
             yield await self.renderer.result()
 
     async def rollback(self):
@@ -168,6 +185,11 @@ class ConversationContext:
 
                     if role == 'user_send':
                         self.preset_decoration_format = text
+                        continue
+
+                    if role == 'voice':
+                        self.conversation_voice = text.strip()
+                        logger.debug(f"Set conversation voice to {self.conversation_voice}")
                         continue
 
                     async for item in self.adapter.preset_ask(role=role.lower().strip(), text=text.strip()):

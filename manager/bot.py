@@ -1,33 +1,33 @@
+import datetime
+import hashlib
+import itertools
+import os
+import time
 import urllib.request
+from typing import List, Dict
 from urllib.parse import urlparse
 
+import OpenAIAuth
 import aiohttp
 import openai
 import requests
-from aiohttp import ClientConnectorError
-from revChatGPT import V1
-
-from requests.exceptions import SSLError, RequestException
-
-from chatbot.chatgpt import ChatGPTBrowserChatbot
-from exceptions import NoAvailableBotException, APIKeyNoFundsError
-
-import itertools
-from typing import Union, List, Dict
-import os
-from revChatGPT.V1 import AsyncChatbot as V1Chatbot
-from revChatGPT.typing import Error as V1Error
-
-from chatbot.Unofficial import AsyncChatbot as BrowserChatbot
-from loguru import logger
-from config import OpenAIAuthBase, OpenAIAPIKey, Config, BingCookiePath, BardCookiePath
-import OpenAIAuth
 import urllib3.exceptions
-import utils.network as network
-from tinydb import TinyDB, Query
-import hashlib
-import datetime
+from aiohttp import ClientConnectorError
 from dateutil.relativedelta import relativedelta
+from loguru import logger
+from poe import Client as PoeClient
+from requests.exceptions import SSLError, RequestException
+from revChatGPT import V1
+from revChatGPT.V1 import AsyncChatbot as V1Chatbot
+from revChatGPT.typings import Error as V1Error
+from tinydb import TinyDB, Query
+
+import utils.network as network
+from chatbot.Unofficial import AsyncChatbot as BrowserChatbot
+from chatbot.chatgpt import ChatGPTBrowserChatbot
+from config import OpenAIAuthBase, OpenAIAPIKey, Config, BingCookiePath, BardCookiePath, YiyanCookiePath, ChatGLMAPI, \
+    PoeCookieAuth
+from exceptions import NoAvailableBotException, APIKeyNoFundsError
 
 
 class BotManager:
@@ -36,8 +36,10 @@ class BotManager:
     bots: Dict[str, List] = {
         "chatgpt-web": [],
         "openai-api": [],
+        "poe-web": [],
         "bing-cookie": [],
-        "bard-cookie": []
+        "bard-cookie": [],
+        "yiyan-cookie": [],
     }
     """Bot list"""
 
@@ -50,6 +52,15 @@ class BotManager:
     bard: List[BardCookiePath]
     """Bard Account Infos"""
 
+    poe: List[PoeCookieAuth]
+    """Poe Account infos"""
+
+    yiyan: List[YiyanCookiePath]
+    """Yiyan Account Infos"""
+
+    chatglm: List[ChatGLMAPI]
+    """chatglm Account Infos"""
+
     roundrobin: Dict[str, itertools.cycle] = {}
 
     def __init__(self, config: Config) -> None:
@@ -57,6 +68,9 @@ class BotManager:
         self.openai = config.openai.accounts if config.openai else []
         self.bing = config.bing.accounts if config.bing else []
         self.bard = config.bard.accounts if config.bard else []
+        self.poe = config.poe.accounts if config.poe else []
+        self.yiyan = config.yiyan.accounts if config.yiyan else []
+        self.chatglm = config.chatglm.accounts if config.chatglm else []
         try:
             os.mkdir('data')
             logger.warning(
@@ -69,24 +83,41 @@ class BotManager:
         self.bots = {
             "chatgpt-web": [],
             "openai-api": [],
+            "poe-web": [],
             "bing-cookie": [],
-            "bard-cookie": []
+            "bard-cookie": [],
+            "yiyan-cookie": [],
+            "chatglm-api": [],
         }
         self.__setup_system_proxy()
         if len(self.bing) > 0:
             self.login_bing()
+        if len(self.poe) > 0:
+            self.login_poe()
         if len(self.bard) > 0:
             self.login_bard()
         if len(self.openai) > 0:
             if self.config.openai.browserless_endpoint:
-                V1.BASE_URL = self.config.openai.browserless_endpoint
-            if self.config.openai.api_endpoint:
-                openai.api_base = self.config.openai.api_endpoint
-            if not self.config.openai.browserless_endpoint.endswith("api/"):
+                V1.BASE_URL = self.config.openai.browserless_endpoint or V1.BASE_URL
+            logger.info(f"当前的 browserless_endpoint 为：{V1.BASE_URL}")
+
+            if V1.BASE_URL == 'https://bypass.duti.tech/api/':
+                logger.error("检测到你还在使用旧的 browserless_endpoint，已为您切换。")
+                V1.BASE_URL = "https://bypass.churchless.tech/api/"
+
+            if not V1.BASE_URL.endswith("api/"):
                 logger.warning(
                     f"提示：你可能要将 browserless_endpoint 修改为 \"{self.config.openai.browserless_endpoint}api/\"")
 
+            if self.config.openai.api_endpoint:
+                openai.api_base = self.config.openai.api_endpoint or openai.api_base
+            logger.info(f"当前的 api_endpoint 为：{openai.api_base}")
+
             await self.login_openai()
+        if len(self.yiyan) > 0:
+            self.login_yiyan()
+        if len(self.chatglm) > 0:
+            self.login_chatglm()
         count = sum(len(v) for v in self.bots.values())
         if count < 1:
             logger.error("没有登录成功的账号，程序无法启动！")
@@ -97,7 +128,9 @@ class BotManager:
                 logger.info(f"AI 类型：{k} - 可用账号： {len(v)} 个")
         # 自动推测默认 AI
         if not self.config.response.default_ai:
-            if len(self.bots['chatgpt-web']) > 0:
+            if len(self.bots['poe-web']) > 0:
+                self.config.response.default_ai = 'poe-chatgpt'
+            elif len(self.bots['chatgpt-web']) > 0:
                 self.config.response.default_ai = 'chatgpt-web'
             elif len(self.bots['openai-api']) > 0:
                 self.config.response.default_ai = 'chatgpt-api'
@@ -105,10 +138,15 @@ class BotManager:
                 self.config.response.default_ai = 'bing'
             elif len(self.bots['bard-cookie']) > 0:
                 self.config.response.default_ai = 'bard'
+            elif len(self.bots['yiyan-cookie']) > 0:
+                self.config.response.default_ai = 'yiyan'
+            elif len(self.bots['chatglm-api']) > 0:
+                self.config.response.default_ai = 'chatglm-api'
             else:
                 self.config.response.default_ai = 'chatgpt-web'
 
     def login_bing(self):
+        os.environ['BING_PROXY_URL'] = self.config.bing.bing_endpoint
         for i, account in enumerate(self.bing):
             logger.info("正在解析第 {i} 个 Bing 账号", i=i + 1)
             if proxy := self.__check_proxy(account.proxy):
@@ -122,7 +160,7 @@ class BotManager:
         if len(self.bots) < 1:
             logger.error("所有 Bing 账号均解析失败！")
         logger.success(f"成功解析 {len(self.bots['bing-cookie'])}/{len(self.bing)} 个 Bing 账号！")
-    
+
     def login_bard(self):
         for i, account in enumerate(self.bard):
             logger.info("正在解析第 {i} 个 Bard 账号", i=i + 1)
@@ -137,6 +175,59 @@ class BotManager:
         if len(self.bots) < 1:
             logger.error("所有 Bard 账号均解析失败！")
         logger.success(f"成功解析 {len(self.bots['bard-cookie'])}/{len(self.bing)} 个 Bard 账号！")
+
+    def login_poe(self):
+        def poe_check_auth(client: PoeClient) -> bool:
+            try:
+                response = client.get_bot_names()
+                logger.debug(f"poe bot is running. bot names -> {response}")
+                return True
+            except KeyError:
+                return False
+
+        try:
+            for i, account in enumerate(self.poe):
+                logger.info("正在解析第 {i} 个 poe web 账号", i=i + 1)
+                if proxy := self.__check_proxy(account.proxy):
+                    account.proxy = proxy
+                bot = PoeClient(token=account.p_b, proxy=account.proxy)
+                if poe_check_auth(bot):
+                    self.bots["poe-web"].append(bot)
+                    logger.success("解析成功！", i=i + 1)
+        except Exception as e:
+            logger.error("解析失败：")
+            logger.exception(e)
+        if len(self.bots["poe-web"]) < 1:
+            logger.error("所有 Poe 账号均解析失败！")
+        logger.success(f"成功解析 {len(self.bots['poe-web'])}/{len(self.poe)} 个 poe web 账号！")
+
+    def login_yiyan(self):
+        for i, account in enumerate(self.yiyan):
+            logger.info("正在解析第 {i} 个 文心一言 账号", i=i + 1)
+            if proxy := self.__check_proxy(account.proxy):
+                account.proxy = proxy
+            try:
+                self.bots["yiyan-cookie"].append(account)
+                logger.success("解析成功！", i=i + 1)
+            except Exception as e:
+                logger.error("解析失败：")
+                logger.exception(e)
+        if len(self.bots) < 1:
+            logger.error("所有 文心一言 账号均解析失败！")
+        logger.success(f"成功解析 {len(self.bots['yiyan-cookie'])}/{len(self.yiyan)} 个 文心一言 账号！")
+
+    def login_chatglm(self):
+        for i, account in enumerate(self.chatglm):
+            logger.info("正在解析第 {i} 个 ChatGLM 账号", i=i + 1)
+            try:
+                self.bots["chatglm-api"].append(account)
+                logger.success("解析成功！", i=i + 1)
+            except Exception as e:
+                logger.error("解析失败：")
+                logger.exception(e)
+        if len(self.bots) < 1:
+            logger.error("所有 ChatGLM 账号均解析失败！")
+        logger.success(f"成功解析 {len(self.bots['chatglm-api'])}/{len(self.chatglm)} 个 ChatGLM 账号！")
 
     async def login_openai(self):
         counter = 0
@@ -209,7 +300,7 @@ class BotManager:
             proxy_addr = urlparse(proxy)
             if not network.is_open(proxy_addr.hostname, proxy_addr.port):
                 raise Exception("登录失败! 无法连接至本地代理服务器，请检查配置文件中的 proxy 是否正确！")
-            requests.get(self.config.openai.browserless_endpoint + "/api/", proxies={
+            requests.get("http://www.gstatic.com/generate_204", proxies={
                 "https": proxy,
                 "http": proxy
             })
@@ -217,7 +308,6 @@ class BotManager:
             return proxy
         else:
             return openai.proxy
-        return None
 
     def __save_login_cache(self, account: OpenAIAuthBase, cache: dict):
         """保存登录缓存"""
@@ -277,6 +367,7 @@ class BotManager:
 
         if cached_account.get('password'):
             logger.info("尝试使用 email + password 登录中...")
+            logger.warning("警告：该方法已不推荐使用，建议使用 access_token 登录。")
             config.pop('access_token', None)
             config.pop('session_token', None)
             config['email'] = cached_account.get('email')
@@ -293,11 +384,17 @@ class BotManager:
         raise Exception("All login method failed")
 
     async def check_api_info(self, account):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(conn_timeout=30, read_timeout=30, trust_env=True,
+                                         connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+            timing_start_at = time.time()
             session.headers.add("Authorization", f"Bearer {account.api_key}")
 
             resp = await session.get(f"{openai.api_base}/dashboard/billing/credit_grants", proxy=account.proxy)
             resp = await resp.json()
+
+            if 'error' in resp:
+                raise Exception(resp['error']['message'])
+
             grant_available = resp.get("total_available")
             grant_used = resp.get("total_used")
 
@@ -316,13 +413,15 @@ class BotManager:
                 proxy=account.proxy)
             resp = await resp.json()
             total_usage = resp.get("total_usage") / 100
-
+            timing_stop_at = time.time()
+            logger.debug(f"本次查询平均延迟：{round((timing_stop_at - timing_start_at) / 3, 2)}s")
         return grant_used, grant_available, has_payment_method, total_usage, hard_limit_usd
 
     async def __login_openai_apikey(self, account):
         logger.info("尝试使用 api_key 登录中...")
         if proxy := self.__check_proxy(account.proxy):
             openai.proxy = proxy
+            account.proxy = proxy
         logger.info("当前检查的 API Key 为：" + account.api_key[:8] + "******" + account.api_key[-4:])
 
         grant_used, grant_available, has_payment_method, total_usage, hard_limit_usd = await self.check_api_info(

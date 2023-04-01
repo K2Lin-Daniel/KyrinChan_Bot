@@ -1,15 +1,14 @@
 import os
 import sys
 
-import asyncio
 import discord
 from discord.ext import commands
-
 from graia.ariadne.message.chain import MessageChain
-from graia.ariadne.message.element import Image, Plain
+from graia.ariadne.message.element import Image, Plain, Voice
 from loguru import logger
 
 from universal import handle_message
+from io import BytesIO
 
 sys.path.append(os.getcwd())
 
@@ -20,7 +19,6 @@ intents.typing = False
 intents.presences = False
 
 bot = commands.Bot(command_prefix='!', intents=intents)
-
 
 async def on_message_event(message: discord.Message) -> None:
     if message.author == bot.user:
@@ -46,18 +44,22 @@ async def on_message_event(message: discord.Message) -> None:
                 if isinstance(elem, Plain) and str(elem):
                     chunks = [str(elem)[i:i + 1500] for i in range(0, len(str(elem)), 1500)]
                     for chunk in chunks:
-                        await message.channel.send(chunk)
-                    return
-                elif isinstance(elem, Image) and elem.get_bytes():
-                    return await message.channel.send(file=discord.File(elem.get_bytes()))
+                        await message.reply(chunk)
+                if isinstance(elem, Image):
+                    await message.reply(file=discord.File(BytesIO(await elem.get_bytes()), filename='image.png'))
+                if isinstance(elem, Voice):
+                    await message.reply(file=discord.File(BytesIO(await elem.get_bytes()), filename="voice.wav"))
+            return
         if isinstance(msg, str):
             chunks = [str(msg)[i:i + 1500] for i in range(0, len(str(msg)), 1500)]
             for chunk in chunks:
-                await message.channel.send(chunk)
+                await message.reply(chunk)
             return
-        elif isinstance(msg, Image):
-            file = discord.File(await msg.get_bytes(), filename='image.png')
-            return await message.channel.send(file=file)
+        if isinstance(msg, Image):
+            return await message.reply(file=discord.File(BytesIO(await msg.get_bytes()), filename='image.png'))
+        if isinstance(msg, Voice):
+            await message.reply(file=discord.File(BytesIO(await msg.get_bytes()), filename="voice.wav"))
+            return
 
     await handle_message(response,
                          f"{'friend' if isinstance(message.channel, discord.DMChannel) else 'group'}-{message.channel.id}",

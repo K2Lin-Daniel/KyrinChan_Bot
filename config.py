@@ -24,7 +24,7 @@ class Mirai(BaseModel):
     """Bot 的 QQ 号"""
     manager_qq: int = 0
     """机器人管理员的 QQ 号"""
-    api_key: str
+    api_key: str = "1234567890"
     """mirai-api-http 的 verifyKey"""
     http_url: str = "http://localhost:8080"
     """mirai-api-http 的 http 适配器地址"""
@@ -44,9 +44,11 @@ class TelegramBot(BaseModel):
     manager_chat: Optional[int] = None
     """管理员的 chat id"""
 
+
 class DiscordBot(BaseModel):
     bot_token: str
     """Discord Bot 的 token"""
+
 
 class OpenAIGPT3Params(BaseModel):
     temperature: float = 0.5
@@ -58,9 +60,9 @@ class OpenAIGPT3Params(BaseModel):
 
 
 class OpenAIAuths(BaseModel):
-    browserless_endpoint = "https://bypass.duti.tech/api/"
+    browserless_endpoint: Optional[str] = None
     """自定义无浏览器登录模式的接入点"""
-    api_endpoint = "https://api.openai.com/v1"
+    api_endpoint: Optional[str] = None
     """自定义 OpenAI API 的接入点"""
 
     gpt3_params: OpenAIGPT3Params = OpenAIGPT3Params()
@@ -120,11 +122,19 @@ class OpenAIAPIKey(OpenAIAuthBase):
     """OpenAI 的 api_key"""
 
 
+class PoeCookieAuth(BaseModel):
+    p_b: str
+    """登陆 poe.com 后 Cookie 中 p_b 的值"""
+    proxy: Optional[str] = None
+    """可选的代理地址，留空则检测系统代理"""
+
+
 class BingCookiePath(BaseModel):
     cookie_content: str
     """Bing 的 Cookie 文件内容"""
     proxy: Optional[str] = None
     """可选的代理地址，留空则检测系统代理"""
+
 
 class BardCookiePath(BaseModel):
     cookie_content: str
@@ -132,17 +142,73 @@ class BardCookiePath(BaseModel):
     proxy: Optional[str] = None
     """可选的代理地址，留空则检测系统代理"""
 
+
+class PoeAuths(BaseModel):
+    accounts: List[PoeCookieAuth] = []
+    """Poe 的账号列表"""
+
+
+class TTSAccounts(BaseModel):
+    speech_key: str
+    """TTS KEY"""
+    speech_service_region: str
+    """TTS 地区"""
+    proxy: Optional[str] = None
+    """可选的代理地址，留空则检测系统代理"""
+
+
 class BingAuths(BaseModel):
     show_suggestions: bool = True
     """在 Bing 的回复后加上猜你想问"""
     show_references: bool = True
     """在 Bing 的回复前加上引用资料"""
+    wss_link: str = "wss://sydney.bing.com/sydney/ChatHub"
+    """Bing 的 Websocket 接入点"""
+    bing_endpoint: str = "https://edgeservices.bing.com/edgesvc/turing/conversation/create"
+    """Bing 的会话创建接入点"""
     accounts: List[BingCookiePath] = []
     """Bing 的账号列表"""
+    max_messages: int = 20
+    """Bing 的最大消息数，仅展示用"""
+
 
 class BardAuths(BaseModel):
     accounts: List[BardCookiePath] = []
-    """Bing 的账号列表"""
+    """Bard 的账号列表"""
+
+
+class AzureAuths(BaseModel):
+    tts_speech_key: Optional[str] = None
+    """TTS KEY"""
+    tts_speech_service_region: Optional[str] = None
+    """TTS 地区"""
+
+
+class YiyanCookiePath(BaseModel):
+    cookie_content: str
+    """"文心一言网站的 Cookie 内容"""
+    proxy: Optional[str] = None
+    """可选的代理地址，留空则检测系统代理"""
+
+
+class YiyanAuths(BaseModel):
+    accounts: List[YiyanCookiePath] = []
+    """文心一言的账号列表"""
+
+
+class ChatGLMAPI(BaseModel):
+    api_endpoint: str
+    """自定义 ChatGLM API 的接入点"""
+    max_turns: int = 10
+    """最大对话轮数"""
+    timeout: int = 120
+    """请求超时时间（单位：秒）"""
+
+
+class ChatGLMAuths(BaseModel):
+    accounts: List[ChatGLMAPI] = []
+    """ChatGLM的账号列表"""
+
 
 class TextToImage(BaseModel):
     always: bool = False
@@ -160,6 +226,12 @@ class TextToImage(BaseModel):
     offset_y: int = 50
     """纵坐标"""
     wkhtmltoimage: Union[str, None] = None
+
+
+class TextToSpeech(BaseModel):
+    always: bool = False
+    """设置后所有的会话都会转语音再发一次"""
+    default: str = "zh-CN-XiaoyanNeural"
 
 
 class Trigger(BaseModel):
@@ -185,6 +257,8 @@ class Trigger(BaseModel):
     """切换当前上下文的模型"""
     switch_command: str = r"切换AI (.+)"
     """切换AI的命令"""
+    switch_voice: str = r"切换语音 (.+)"
+    """切换tts语音音色的命令"""
     mixed_only_command: List[str] = ["图文混合模式"]
     """切换至图文混合模式"""
     image_only_command: List[str] = ["图片模式"]
@@ -200,6 +274,8 @@ class Trigger(BaseModel):
         "text-davinci-002-render-paid"
     ]
     """允许普通用户切换的模型列表"""
+    allow_switching_ai: bool = True
+    """允许普通用户切换AI"""
 
 
 class Response(BaseModel):
@@ -309,14 +385,24 @@ class Ratelimit(BaseModel):
 
 
 class Config(BaseModel):
+    # === Platform Settings ===
     onebot: Optional[Onebot] = None
     mirai: Optional[Mirai] = None
     telegram: Optional[TelegramBot] = None
     discord: Optional[DiscordBot] = None
+
+    # === Account Settings ===
     openai: OpenAIAuths = OpenAIAuths()
     bing: BingAuths = BingAuths()
     bard: BardAuths = BardAuths()
+    azure: AzureAuths = AzureAuths()
+    yiyan: YiyanAuths = YiyanAuths()
+    chatglm: ChatGLMAuths = ChatGLMAuths()
+    poe: PoeAuths = PoeAuths()
+
+    # === Response Settings ===
     text_to_image: TextToImage = TextToImage()
+    text_to_speech: TextToSpeech = TextToSpeech()
     trigger: Trigger = Trigger()
     response: Response = Response()
     system: System = System()
@@ -399,7 +485,7 @@ class Config(BaseModel):
             exit(-1)
 
     @staticmethod
-    def save_config(config: Config) -> Config:
+    def save_config(config: Config):
         try:
             with open("config.cfg", "wb") as f:
                 parsed_str = toml.dumps(config.dict()).encode(sys.getdefaultencoding())
