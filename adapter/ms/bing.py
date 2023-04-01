@@ -70,11 +70,11 @@ class BingAdapter(BotAdapter):
                         max_messages = response["item"]["throttling"]["maxNumUserMessagesInConversation"]
                     except:
                         max_messages = config.bing.max_messages
-                    remaining_conversations = f'\n 💾 ' + f"{'🟦' * self.count}{'⬜' * (max_messages - self.count)}"
+                    remaining_conversations = f'\n 💾 ' + f"{'🟦 ' * self.count}{'⬜ ' * (max_messages - self.count)}"
                     if len(response["item"].get('messages', [])) > 1 and config.bing.show_suggestions:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
-                            parsed_content = parsed_content + '  \n 💡喵~ 想知道什么?  \n '
+                            parsed_content = parsed_content + '  \n\n 💡喵~ 想知道什么?  \n '
                             parsed_content = parsed_content.replace("is Bing", "is Kyrin Chan~")
                             parsed_content = parsed_content.replace("这是必应", "Kyrin Chan Dayo~")
                             parsed_content = parsed_content.replace("是必应", "是凯琳酱~")
