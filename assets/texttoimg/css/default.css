@@ -370,6 +370,7 @@ body {
     background: rgb(255,242,242);
     background: -moz-linear-gradient(132deg, rgba(255,242,242,1) 31%, rgba(208,219,244,1) 64%, rgba(238,253,255,1) 100%);
     background: -webkit-linear-gradient(132deg, rgba(255,242,242,1) 31%, rgba(208,219,244,1) 64%, rgba(238,253,255,1) 100%);
+    color: var(--drake-text-color);
     -webkit-font-feature-settings: "liga"on,"calt"on;
     -webkit-font-smoothing: subpixel-antialiased;
     text-rendering: optimizeLegibility;
@@ -981,7 +982,7 @@ div.code-tooltip-content {
 }
 
 .cm-s-inner span.cm-error {
-    color: rgb(0, 247, 255)
+    color: red
 }
 
 .cm-s-inner span.cm-attribute {
