@@ -31,6 +31,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: 'linux/amd64,linux/arm64'
           tags: k2lin/kyrinchan-bot:stable
           cache-from: type=gha
           cache-to: type=gha,mode=max
