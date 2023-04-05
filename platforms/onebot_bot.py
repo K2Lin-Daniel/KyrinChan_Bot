@@ -58,7 +58,7 @@ def transform_message_chain(text: str) -> MessageChain:
         message_class = message_classes.get(cq_type)
         if message_class:
             text_segment = text[start:match.start()]
-            if text_segment:
+            if text_segment and not text_segment.startswith('[CQ:reply,'):
                 messages.append(Plain(text_segment))
             if cq_type == "at":
                 params["target"] = int(params.pop("qq"))
@@ -221,8 +221,6 @@ async def _(event: Event):
     return await bot.send(event,
                           f"{msg_type} {msg_id} 的额度使用情况：{limit['rate']}条/小时， 当前已发送：{usage['count']}条消息\n整点重置，当前服务器时间：{current_time}")
 
-
-
 @bot.on_message()
 async def _(event: Event):
     pattern = ".预设列表"
@@ -260,9 +258,12 @@ async def _(event: Event):
 
 @bot.on_startup
 async def startup():
-    await botManager.login()
     logger.success("启动完毕，接收消息中……")
 
 
-def main():
-    bot.run(host=config.onebot.reverse_ws_host, port=config.onebot.reverse_ws_port)
+async def start_task():
+    """|coro|
+    以异步方式启动
+    """
+    return await bot.run_task(host=config.onebot.reverse_ws_host, port=config.onebot.reverse_ws_port)
+

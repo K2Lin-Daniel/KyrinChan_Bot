@@ -1,6 +1,7 @@
-import asyncio
-from typing import Generator
+import json
+from typing import Generator, Union
 
+import asyncio
 from constants import config
 from adapter.botservice import BotAdapter
 from EdgeGPT import Chatbot as EdgeChatbot, ConversationStyle
@@ -29,9 +30,12 @@ class BingAdapter(BotAdapter):
         self.conversation_style = conversation_style
         account = botManager.pick('bing-cookie')
         self.cookieData = []
-        for line in account.cookie_content.split("; "):
-            name, value = line.split("=", 1)
-            self.cookieData.append({"name": name, "value": value})
+        if account.cookie_content.strip().startswith('['):
+            self.cookieData = json.loads(account.cookie_content)
+        else:
+            for line in account.cookie_content.split("; "):
+                name, value = line.split("=", 1)
+                self.cookieData.append({"name": name, "value": value})
 
         self.bot = EdgeChatbot(cookies=self.cookieData)
 
@@ -100,10 +104,13 @@ class BingAdapter(BotAdapter):
                     return
                 yield parsed_content
             logger.debug("Content:" + parsed_content)
+        except Union[asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError] as e:
+            raise e
         except Exception as e:
             logger.exception(e)
             yield "⌛此对话已终结了喵 继续回复将开启新会话~🔁"
             await self.on_reset()
             return
+
     async def preset_ask(self, role: str, text: str):
         yield None  # Bing 不使用预设功能

@@ -1,19 +1,16 @@
-import datetime
 import hashlib
 import itertools
 import os
-import time
 import urllib.request
 from typing import List, Dict
 from urllib.parse import urlparse
 
 import OpenAIAuth
-import aiohttp
 import openai
 import requests
 import urllib3.exceptions
 from aiohttp import ClientConnectorError
-from dateutil.relativedelta import relativedelta
+from httpx import ConnectTimeout
 from loguru import logger
 from poe import Client as PoeClient
 from requests.exceptions import SSLError, RequestException
@@ -249,7 +246,7 @@ class BotManager:
                 counter = counter + 1
             except OpenAIAuth.Error as e:
                 logger.error("登录失败! 请检查 IP 、代理或者账号密码是否正确{exc}", exc=e)
-            except (RequestException, SSLError, urllib3.exceptions.MaxRetryError, ClientConnectorError) as e:
+            except (ConnectTimeout, RequestException, SSLError, urllib3.exceptions.MaxRetryError, ClientConnectorError) as e:
                 logger.error("登录失败! 连接 OpenAI 服务器失败,请更换代理节点重试！{exc}", exc=e)
             except APIKeyNoFundsError:
                 logger.error("登录失败! API 账号余额不足，无法继续使用。")
