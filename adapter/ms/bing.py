@@ -89,7 +89,7 @@ class BingAdapter(BotAdapter):
                             parsed_content = parsed_content.replace("你好，", "Hi~")
                             #parsed_content = ContentDFA.filter_all(parsed_content)
                             for suggestion in suggestions:
-                                parsed_content = parsed_content + f"- {suggestion.get('text')}  \n"
+                                parsed_content = f"{parsed_content}- {suggestion.get('text')}  \n"
 
                     parsed_content = parsed_content + remaining_conversations
                     # not final的parsed_content已经yield走了，只能在末尾加剩余回复数，或者改用EdgeGPT自己封装的ask之后再正则替换
@@ -103,7 +103,7 @@ class BingAdapter(BotAdapter):
                     await self.on_reset()
                     return
                 yield parsed_content
-            logger.debug("Content:" + parsed_content)
+            logger.debug(f"Content:{parsed_content}")
         except Union[asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError] as e:
             raise e
         except Exception as e:
