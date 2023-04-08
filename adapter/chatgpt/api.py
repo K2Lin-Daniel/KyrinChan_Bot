@@ -89,7 +89,7 @@ class ChatGPTAPIAdapter(BotAdapter):
         async for resp in self.bot.ask_stream_async(prompt=prompt, role=self.hashed_user_id, convo_id=self.session_id):
             full_response += resp
             if ContentDFA.exists(full_response):
-                logger.debug("Dangerous ASK:" + prompt + " Dangerous Content:" + parsed_content)
+                logger.debug("Dangerous ASK:" + prompt + " Dangerous Content:" + full_response)
                 yield "🚫此对话违反了凯琳酱的政策 请珍惜凯琳酱，不要询问敏感的问题喵~ 继续回复将会开启新会话~♻️"
                 await self.on_reset()
                 return
