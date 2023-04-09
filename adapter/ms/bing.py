@@ -98,7 +98,7 @@ class BingAdapter(BotAdapter):
                         await self.on_reset()
                         return
                 if ContentDFA.exists(parsed_content):
-                    logger.debug("Dangerous ASK:" + prompt + " Dangerous Content:" + parsed_content)
+                    logger.debug(f"Dangerous ASK:{prompt} Dangerous Content:{parsed_content}")
                     yield "🚫此对话违反了凯琳酱的政策 请珍惜凯琳酱，不要询问敏感的问题喵~ 继续回复将会开启新会话~♻️"
                     await self.on_reset()
                     return

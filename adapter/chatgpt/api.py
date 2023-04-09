@@ -78,7 +78,7 @@ class ChatGPTAPIAdapter(BotAdapter):
             self.__conversation_keep_from = 1
 
         while self.bot.max_tokens - self.bot.get_token_count(self.session_id) < config.openai.gpt3_params.min_tokens and \
-                len(self.bot.conversation[self.session_id]) > self.__conversation_keep_from:
+                    len(self.bot.conversation[self.session_id]) > self.__conversation_keep_from:
             self.bot.conversation[self.session_id].pop(self.__conversation_keep_from)
             logger.debug(
                 f"清理 token，历史记录遗忘后使用 token 数：{str(self.bot.get_token_count(self.session_id))}"
@@ -89,7 +89,7 @@ class ChatGPTAPIAdapter(BotAdapter):
         async for resp in self.bot.ask_stream_async(prompt=prompt, role=self.hashed_user_id, convo_id=self.session_id):
             full_response += resp
             if ContentDFA.exists(full_response):
-                logger.debug("Dangerous ASK:" + prompt + " Dangerous Content:" + full_response)
+                logger.debug(f"Dangerous ASK:{prompt} Dangerous Content:{full_response}")
                 yield "🚫此对话违反了凯琳酱的政策 请珍惜凯琳酱，不要询问敏感的问题喵~ 继续回复将会开启新会话~♻️"
                 await self.on_reset()
                 return

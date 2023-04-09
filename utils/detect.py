@@ -22,12 +22,9 @@ def base64ToStr(s):
 class DFA:
     def __init__(self, path: str = None):
         self.ban_words_set = set()
-        self.ban_words_list = list()
-        self.ban_words_dict = dict()
-        if not path:
-            self.path = 'external/Danger.form'
-        else:
-            self.path = path
+        self.ban_words_list = []
+        self.ban_words_dict = {}
+        self.path = path or 'external/Danger.form'
         self.get_words()
 
     # 获取敏感词列表
@@ -67,19 +64,16 @@ class DFA:
         new_word = str(new_word)
         # print(new_word)
         now_dict = self.ban_words_dict
-        i = 0
-        for x in new_word:
+        for i, x in enumerate(new_word):
             if x not in now_dict:
                 x = str(x)
-                new_dict = dict()
-                new_dict['is_end'] = False
+                new_dict = {'is_end': False}
                 now_dict[x] = new_dict
                 now_dict = new_dict
             else:
                 now_dict = now_dict[x]
             if i == len(new_word) - 1:
                 now_dict['is_end'] = True
-            i += 1
 
     # 寻找第一次出现敏感词的位置
     def find_illegal(self, _str):
@@ -112,10 +106,7 @@ class DFA:
         pos = self.find_illegal(sentence)
         _sentence = re.sub('\W+', '', sentence).replace("_", '')
         _pos = self.find_illegal(_sentence)
-        if pos == -1 and _pos == -1:
-            return False
-        else:
-            return True
+        return pos != -1 or _pos != -1
 
     # 将指定位置的敏感词替换为*
     def filter_words(self, filter_str, pos):
@@ -131,7 +122,7 @@ class DFA:
         return filter_str
 
     def filter_all(self, s):
-        pos_list = list()
+        pos_list = []
         ss = DFA.draw_words(s, pos_list)
         illegal_pos = self.find_illegal(ss)
         while illegal_pos != -1:
