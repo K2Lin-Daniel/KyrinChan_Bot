@@ -336,7 +336,7 @@ class Response(BaseModel):
     )
     """对空消息回复的占位符"""
 
-    reset = "会话已重置。"
+    reset = "♻上下文的记忆已经被清除了喵~👋"
     """重置会话时发送的消息"""
 
     rollback_success = "已回滚至上一条对话，你刚刚发的我就忘记啦！"
