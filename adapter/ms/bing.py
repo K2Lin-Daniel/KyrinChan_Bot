@@ -72,9 +72,12 @@ class BingAdapter(BotAdapter):
                 else:
                     try:
                         max_messages = response["item"]["throttling"]["maxNumUserMessagesInConversation"]
-                    except:
+                    except Exception:
                         max_messages = config.bing.max_messages
-                    remaining_conversations = f'\n\n💾' + f"{'🟦' * self.count}{'⬜' * (max_messages - self.count)}"
+                    if config.bing.show_remaining_count:
+                        remaining_conversations = f'\n\n💾' + f"{'🟦' * self.count}{'⬜' * (max_messages - self.count)}"
+                    else:
+                        remaining_conversations = ''
                     if len(response["item"].get('messages', [])) > 1 and config.bing.show_suggestions:
                         suggestions = response["item"]["messages"][-1].get("suggestedResponses", [])
                         if len(suggestions) > 0:
